@@ -12,7 +12,11 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Stethoscope, User as UserIcon } from "lucide-react";
 import {
   Upload, FileAudio, CheckCircle2, Brain, AudioWaveform, Loader2,
   Pill, AlertCircle, CalendarClock, Bookmark, MessageSquarePlus,
@@ -40,6 +44,11 @@ function Dashboard() {
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+  const [namesOpen, setNamesOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<string | null>(null);
+  const [doctorName, setDoctorName] = useState("");
+  const [patientName, setPatientName] = useState("");
+  const [participants, setParticipants] = useState<{ doctor: string; patient: string } | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 
   const runPipeline = (name: string) => {
@@ -62,6 +71,27 @@ function Dashboard() {
     }, 70);
   };
 
+  const promptForNames = (name: string) => {
+    setPendingFile(name);
+    setDoctorName("");
+    setPatientName("");
+    setNamesOpen(true);
+  };
+
+  const confirmNames = () => {
+    const d = doctorName.trim();
+    const p = patientName.trim();
+    if (!d || !p) {
+      toast.error("Names required", { description: "Enter both doctor and patient name." });
+      return;
+    }
+    setParticipants({ doctor: d, patient: p });
+    setNamesOpen(false);
+    const f = pendingFile;
+    setPendingFile(null);
+    if (f) runPipeline(f);
+  };
+
   const onFile = (f: File) => {
     if (!/\.(mp3|wav|m4a)$/i.test(f.name) || f.size > 10 * 1024 * 1024) {
       setShake(true);
@@ -69,13 +99,13 @@ function Dashboard() {
       toast.error("Invalid file", { description: "MP3 or WAV under 10MB." });
       return;
     }
-    runPipeline(f.name);
+    promptForNames(f.name);
   };
 
   const handleRecord = () => {
     if (recording) {
       setRecording(false);
-      runPipeline("live-recording.wav");
+      promptForNames("live-recording.wav");
     } else {
       setRecording(true);
       toast("Recording started", { description: "Tap again to stop." });
@@ -202,13 +232,61 @@ function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Results />
+                  <Results participants={participants} />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       </main>
+
+      <Dialog open={namesOpen} onOpenChange={(o) => { if (!o) { setNamesOpen(false); setPendingFile(null); } }}>
+        <DialogContent className="glass-strong rounded-2xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Who's in this consultation?</DialogTitle>
+            <DialogDescription>
+              Enter names so Echo can label the transcript and summary correctly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="doctor-name" className="flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-primary" /> Doctor's name
+              </Label>
+              <Input
+                id="doctor-name"
+                placeholder="e.g. Dr. Mehta"
+                value={doctorName}
+                onChange={(e) => setDoctorName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="patient-name" className="flex items-center gap-2">
+                <UserIcon className="w-4 h-4 text-trust" /> Patient's name
+              </Label>
+              <Input
+                id="patient-name"
+                placeholder="e.g. Ravi Kumar"
+                value={patientName}
+                onChange={(e) => setPatientName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmNames(); }}
+              />
+            </div>
+            {pendingFile && (
+              <p className="text-xs text-muted-foreground font-mono">File: {pendingFile}</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => { setNamesOpen(false); setPendingFile(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={confirmNames} className="gradient-primary text-primary-foreground border-0">
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -276,13 +354,15 @@ function urgencyClass(u: "green" | "amber" | "red") {
          "bg-success/15 text-success border-success/30";
 }
 
-function Results() {
+function Results({ participants }: { participants: { doctor: string; patient: string } | null }) {
+  const doctor = participants?.doctor ?? "Doctor";
+  const patient = participants?.patient ?? "Patient";
   return (
     <GlassCard variant="strong" className="p-6">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-semibold">Consultation summary</h2>
-          <p className="text-xs text-muted-foreground font-mono mt-0.5">Dr. Mehta · 14 Apr 2026 · 6m 12s</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">{doctor} · {patient} · 14 Apr 2026 · 6m 12s</p>
         </div>
         <ShareMenu />
       </div>
@@ -394,7 +474,7 @@ function Results() {
               ].map((t, i) => (
                 <div key={i} className="flex gap-3">
                   <Badge variant={t.who === "Doctor" ? "default" : "secondary"} className={t.who === "Doctor" ? "gradient-primary text-primary-foreground border-0" : ""}>
-                    {t.who}
+                    {t.who === "Doctor" ? doctor : patient}
                   </Badge>
                   <p className="flex-1">
                     {t.text.split(/\b(metformin|atorvastatin|HbA1c|sugar|cholesterol)\b/gi).map((part, j) =>
