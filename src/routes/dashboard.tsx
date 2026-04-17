@@ -44,6 +44,11 @@ function Dashboard() {
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [shake, setShake] = useState(false);
+  const [namesOpen, setNamesOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<string | null>(null);
+  const [doctorName, setDoctorName] = useState("");
+  const [patientName, setPatientName] = useState("");
+  const [participants, setParticipants] = useState<{ doctor: string; patient: string } | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 
   const runPipeline = (name: string) => {
@@ -66,6 +71,27 @@ function Dashboard() {
     }, 70);
   };
 
+  const promptForNames = (name: string) => {
+    setPendingFile(name);
+    setDoctorName("");
+    setPatientName("");
+    setNamesOpen(true);
+  };
+
+  const confirmNames = () => {
+    const d = doctorName.trim();
+    const p = patientName.trim();
+    if (!d || !p) {
+      toast.error("Names required", { description: "Enter both doctor and patient name." });
+      return;
+    }
+    setParticipants({ doctor: d, patient: p });
+    setNamesOpen(false);
+    const f = pendingFile;
+    setPendingFile(null);
+    if (f) runPipeline(f);
+  };
+
   const onFile = (f: File) => {
     if (!/\.(mp3|wav|m4a)$/i.test(f.name) || f.size > 10 * 1024 * 1024) {
       setShake(true);
@@ -73,13 +99,13 @@ function Dashboard() {
       toast.error("Invalid file", { description: "MP3 or WAV under 10MB." });
       return;
     }
-    runPipeline(f.name);
+    promptForNames(f.name);
   };
 
   const handleRecord = () => {
     if (recording) {
       setRecording(false);
-      runPipeline("live-recording.wav");
+      promptForNames("live-recording.wav");
     } else {
       setRecording(true);
       toast("Recording started", { description: "Tap again to stop." });
