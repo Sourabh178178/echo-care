@@ -232,13 +232,61 @@ function Dashboard() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Results />
+                  <Results participants={participants} />
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
       </main>
+
+      <Dialog open={namesOpen} onOpenChange={(o) => { if (!o) { setNamesOpen(false); setPendingFile(null); } }}>
+        <DialogContent className="glass-strong rounded-2xl sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Who's in this consultation?</DialogTitle>
+            <DialogDescription>
+              Enter names so Echo can label the transcript and summary correctly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="doctor-name" className="flex items-center gap-2">
+                <Stethoscope className="w-4 h-4 text-primary" /> Doctor's name
+              </Label>
+              <Input
+                id="doctor-name"
+                placeholder="e.g. Dr. Mehta"
+                value={doctorName}
+                onChange={(e) => setDoctorName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="patient-name" className="flex items-center gap-2">
+                <UserIcon className="w-4 h-4 text-trust" /> Patient's name
+              </Label>
+              <Input
+                id="patient-name"
+                placeholder="e.g. Ravi Kumar"
+                value={patientName}
+                onChange={(e) => setPatientName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") confirmNames(); }}
+              />
+            </div>
+            {pendingFile && (
+              <p className="text-xs text-muted-foreground font-mono">File: {pendingFile}</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="ghost" onClick={() => { setNamesOpen(false); setPendingFile(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={confirmNames} className="gradient-primary text-primary-foreground border-0">
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
