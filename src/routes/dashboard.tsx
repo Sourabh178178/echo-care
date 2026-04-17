@@ -474,7 +474,7 @@ function Results({ participants }: { participants: { doctor: string; patient: st
               ].map((t, i) => (
                 <div key={i} className="flex gap-3">
                   <Badge variant={t.who === "Doctor" ? "default" : "secondary"} className={t.who === "Doctor" ? "gradient-primary text-primary-foreground border-0" : ""}>
-                    {t.who}
+                    {t.who === "Doctor" ? doctor : patient}
                   </Badge>
                   <p className="flex-1">
                     {t.text.split(/\b(metformin|atorvastatin|HbA1c|sugar|cholesterol)\b/gi).map((part, j) =>
