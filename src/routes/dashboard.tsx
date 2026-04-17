@@ -12,7 +12,11 @@ import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Stethoscope, User as UserIcon } from "lucide-react";
 import {
   Upload, FileAudio, CheckCircle2, Brain, AudioWaveform, Loader2,
   Pill, AlertCircle, CalendarClock, Bookmark, MessageSquarePlus,
