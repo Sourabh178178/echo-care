@@ -354,13 +354,15 @@ function urgencyClass(u: "green" | "amber" | "red") {
          "bg-success/15 text-success border-success/30";
 }
 
-function Results() {
+function Results({ participants }: { participants: { doctor: string; patient: string } | null }) {
+  const doctor = participants?.doctor ?? "Doctor";
+  const patient = participants?.patient ?? "Patient";
   return (
     <GlassCard variant="strong" className="p-6">
       <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
           <h2 className="text-xl font-semibold">Consultation summary</h2>
-          <p className="text-xs text-muted-foreground font-mono mt-0.5">Dr. Mehta · 14 Apr 2026 · 6m 12s</p>
+          <p className="text-xs text-muted-foreground font-mono mt-0.5">{doctor} · {patient} · 14 Apr 2026 · 6m 12s</p>
         </div>
         <ShareMenu />
       </div>
